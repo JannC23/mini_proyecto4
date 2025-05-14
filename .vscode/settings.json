@@ -1,0 +1,14 @@
+{
+<<<<<<< HEAD
+    "java.project.sourcePaths": [
+        "mini_proyecto2/mini_proyecto2-main/src",
+        "src"
+    ],
+=======
+    "java.project.sourcePaths": ["src"],
+>>>>>>> origin/main
+    "java.project.outputPath": "bin",
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar"
+    ]
+}

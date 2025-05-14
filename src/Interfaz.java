@@ -1,0 +1,396 @@
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.util.ArrayList;
+// Clase que representa la interfaz gráfica del simulador de batalla Pokémon
+// Aquí se maneja todo lo relacionado con la interacción del usuario y la visualización
+public class Interfaz {
+    private JFrame frame; // Ventana principal donde se mostrará todo
+    private JPanel panelInicio, panelBatalla; // Paneles para las diferentes pantallas (inicio y batalla)
+    private JTextField nombre1Field, nombre2Field; // Campos de texto para que los jugadores ingresen sus nombres
+    private JButton btnAleatorio1, btnManual1, btnAleatorio2, btnManual2, btnBatalla; // Botones para las opciones de equipo
+    private JLabel nombreP1, nombreP2, hp1, hp2, gif1, gif2; // Etiquetas para mostrar información de los Pokémon
+    private JComboBox<String> ataquesBox; // ComboBox para que el jugador seleccione un ataque
+    private JButton btnAtacar; // Botón para realizar un ataque
+    private JButton btnVerEquiposInicio; // Botón para ver los equipos seleccionados antes de la batalla
+    private Entrenador entrenador1, entrenador2; // Objetos que representan a los entrenadores
+    private boolean turnoJugador1 = true; // Variable para saber de quién es el turno (true = jugador 1)
+
+    // Constructor de la clase Interfaz
+    public Interfaz() {
+        frame = new JFrame("Simulador de Batalla Pokémon"); // Crear la ventana principal
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Cerrar la aplicación al cerrar la ventana
+        frame.setSize(900, 600); // Tamaño de la ventana
+        frame.setLayout(new CardLayout()); // Usamos CardLayout para cambiar entre pantallas
+
+        inicializarInicio(); // Llamamos al método que configura la pantalla de inicio
+        inicializarBatalla(); // Llamamos al método que configura la pantalla de batalla
+
+        frame.setVisible(true); // Hacemos visible la ventana
+    }
+
+    // Método para configurar la pantalla de inicio
+    private void inicializarInicio() {
+        panelInicio = new JPanel(new GridLayout(7, 2, 10, 10)); // Crear un panel con una cuadrícula de 7x2
+        panelInicio.setBorder(BorderFactory.createEmptyBorder(40, 100, 40, 100)); // Agregar márgenes al panel
+        panelInicio.setBackground(new Color(220, 240, 255)); // Fondo azul claro para que se vea bonito
+
+        // Crear los campos de texto y botones para las opciones de los jugadores
+        nombre1Field = new JTextField(); // Campo para el nombre del jugador 1
+        nombre2Field = new JTextField(); // Campo para el nombre del jugador 2
+        btnAleatorio1 = new JButton("Equipo Aleatorio (Jugador 1)"); // Botón para generar equipo aleatorio para el jugador 1
+        btnManual1 = new JButton("Seleccionar Manualmente (Jugador 1)"); // Botón para seleccionar equipo manualmente para el jugador 1
+        btnAleatorio2 = new JButton("Equipo Aleatorio (Jugador 2)"); // Botón para generar equipo aleatorio para el jugador 2
+        btnManual2 = new JButton("Seleccionar Manualmente (Jugador 2)"); // Botón para seleccionar equipo manualmente para el jugador 2
+        btnBatalla = new JButton("Iniciar Batalla"); // Botón para empezar la batalla
+        btnVerEquiposInicio = new JButton("Ver Equipos"); // Botón para mostrar los equipos seleccionados
+
+        // Agregar los componentes al panel de inicio
+        panelInicio.add(new JLabel("Nombre Entrenador 1:")); // Etiqueta para el nombre del jugador 1
+        panelInicio.add(nombre1Field); // Campo de texto para el jugador 1
+        panelInicio.add(btnAleatorio1); // Botón para equipo aleatorio del jugador 1
+        panelInicio.add(btnManual1); // Botón para equipo manual del jugador 1
+        panelInicio.add(new JLabel("Nombre Entrenador 2:")); // Etiqueta para el nombre del jugador 2
+        panelInicio.add(nombre2Field); // Campo de texto para el jugador 2
+        panelInicio.add(btnAleatorio2); // Botón para equipo aleatorio del jugador 2
+        panelInicio.add(btnManual2); // Botón para equipo manual del jugador 2
+        panelInicio.add(new JLabel()); // Espacio vacío para que se vea mejor
+        panelInicio.add(btnVerEquiposInicio); // Botón para ver los equipos
+        panelInicio.add(new JLabel()); // Otro espacio vacío
+        panelInicio.add(btnBatalla); // Botón para iniciar la batalla
+
+        // Configurar las acciones de los botones
+        btnAleatorio1.addActionListener(e -> {
+            String n1 = nombre1Field.getText().trim(); // Obtener el nombre del jugador 1
+            if (n1.isEmpty()) { // Verificar que no esté vacío
+                JOptionPane.showMessageDialog(frame, "Ingresa el nombre del Entrenador 1."); // Mostrar mensaje de error
+                return;
+            }
+            entrenador1 = new Entrenador(n1); // Crear el entrenador 1
+            entrenador1.setEquipo(Pokemon.crearPokemonAleatorio()); // Asignar un equipo aleatorio
+            JOptionPane.showMessageDialog(frame, "Equipo generado aleatoriamente para " + n1); // Confirmar al usuario
+        });
+
+        btnManual1.addActionListener(e -> {
+            String n1 = nombre1Field.getText().trim(); // Obtener el nombre del jugador 1
+            if (n1.isEmpty()) { // Verificar que no esté vacío
+                JOptionPane.showMessageDialog(frame, "Ingresa el nombre del Entrenador 1."); // Mostrar mensaje de error
+                return;
+            }
+            entrenador1 = new Entrenador(n1); // Crear el entrenador 1
+            entrenador1.setEquipo(seleccionarEquipoManual(entrenador1.getNombre())); // Asignar un equipo manual
+        });
+
+        btnAleatorio2.addActionListener(e -> {
+            String n2 = nombre2Field.getText().trim(); // Obtener el nombre del jugador 2
+            if (n2.isEmpty()) { // Verificar que no esté vacío
+                JOptionPane.showMessageDialog(frame, "Ingresa el nombre del Entrenador 2."); // Mostrar mensaje de error
+                return;
+            }
+            entrenador2 = new Entrenador(n2); // Crear el entrenador 2
+            entrenador2.setEquipo(Pokemon.crearPokemonAleatorio()); // Asignar un equipo aleatorio
+            JOptionPane.showMessageDialog(frame, "Equipo generado aleatoriamente para " + n2); // Confirmar al usuario
+        });
+
+        btnManual2.addActionListener(e -> {
+            String n2 = nombre2Field.getText().trim(); // Obtener el nombre del jugador 2
+            if (n2.isEmpty()) { // Verificar que no esté vacío
+                JOptionPane.showMessageDialog(frame, "Ingresa el nombre del Entrenador 2."); // Mostrar mensaje de error
+                return;
+            }
+            entrenador2 = new Entrenador(n2); // Crear el entrenador 2
+            entrenador2.setEquipo(seleccionarEquipoManual(entrenador2.getNombre())); // Asignar un equipo manual
+        });
+
+        btnVerEquiposInicio.addActionListener(e -> mostrarEquipos()); // Mostrar los equipos seleccionados
+
+        btnBatalla.addActionListener(e -> {
+            if (entrenador1 == null || entrenador2 == null) { // Verificar que ambos entrenadores tengan equipos
+                JOptionPane.showMessageDialog(frame, "Ambos entrenadores deben tener equipos asignados."); // Mostrar mensaje de error
+                return;
+            }
+            elegirPokemonInicial(); // Pasar a la selección de Pokémon inicial
+        });
+
+        frame.add(panelInicio, "inicio"); // Agregar el panel de inicio a la ventana
+    }
+
+    // Método para configurar la pantalla de batalla
+    private void inicializarBatalla() {
+        panelBatalla = new JPanel(new BorderLayout()); // Crear un panel con diseño BorderLayout
+
+        // Panel superior para mostrar los Pokémon y sus atributos
+        JPanel panelSup = new JPanel(new GridLayout(2, 3)); // Crear un panel con una cuadrícula de 2x3
+        nombreP1 = new JLabel("", SwingConstants.CENTER); // Etiqueta para el nombre del Pokémon del jugador 1
+        nombreP2 = new JLabel("", SwingConstants.CENTER); // Etiqueta para el nombre del Pokémon del jugador 2
+        hp1 = new JLabel("", SwingConstants.CENTER); // Etiqueta para los puntos de salud del jugador 1
+        hp2 = new JLabel("", SwingConstants.CENTER); // Etiqueta para los puntos de salud del jugador 2
+        gif1 = new JLabel("", SwingConstants.CENTER); // Etiqueta para el GIF del Pokémon del jugador 1
+        gif2 = new JLabel("", SwingConstants.CENTER); // Etiqueta para el GIF del Pokémon del jugador 2
+
+        Dimension gifSize = new Dimension(200, 200); // Tamaño de los GIFs
+        gif1.setPreferredSize(gifSize); // Establecer tamaño para el GIF del jugador 1
+        gif2.setPreferredSize(gifSize); // Establecer tamaño para el GIF del jugador 2
+
+        // Agregar componentes al panel superior
+        panelSup.add(nombreP1);
+        panelSup.add(new JLabel("VS", SwingConstants.CENTER)); // Etiqueta "VS" para mostrar el enfrentamiento
+        panelSup.add(nombreP2);
+        panelSup.add(gif1);
+        panelSup.add(new JLabel()); // Espacio vacío
+        panelSup.add(gif2);
+
+        // Panel inferior para los controles de batalla
+        JPanel panelInf = new JPanel(new GridLayout(2, 1)); // Panel con dos filas
+        JPanel panelAtributos = new JPanel(new GridLayout(1, 2)); // Panel para los atributos de los Pokémon
+        panelAtributos.add(hp1); // Agregar los puntos de salud del jugador 1
+        panelAtributos.add(hp2); // Agregar los puntos de salud del jugador 2
+
+        JPanel panelControles = new JPanel(); // Panel para los controles de batalla
+        ataquesBox = new JComboBox<>(); // ComboBox para seleccionar ataques
+        btnAtacar = new JButton("Atacar"); // Botón para realizar un ataque
+        panelControles.add(ataquesBox); // Agregar el ComboBox al panel
+        panelControles.add(btnAtacar); // Agregar el botón al panel
+
+        panelInf.add(panelAtributos); // Agregar los atributos al panel inferior
+        panelInf.add(panelControles); // Agregar los controles al panel inferior
+
+        btnAtacar.addActionListener(e -> ejecutarTurno()); // Configurar la acción del botón "Atacar"
+
+        panelBatalla.add(panelSup, BorderLayout.CENTER); // Agregar el panel superior al centro
+        panelBatalla.add(panelInf, BorderLayout.SOUTH); // Agregar el panel inferior abajo
+
+        frame.add(panelBatalla, "batalla"); // Agregar el panel de batalla a la ventana
+    }
+
+    // Método para seleccionar un equipo manualmente
+    private ArrayList<Pokemon> seleccionarEquipoManual(String nombreEntrenador) {
+        ArrayList<Pokemon> equipo = new ArrayList<>();
+        PokemonEnum[] listaPokemon = PokemonEnum.values();
+        boolean[] ocupados = new boolean[listaPokemon.length];
+
+        for (int i = 0; i < 3; i++) {
+            String[] opciones = new String[listaPokemon.length];
+            for (int j = 0; j < listaPokemon.length; j++) {
+                opciones[j] = listaPokemon[j].getNombre();
+            }
+            String seleccion = (String) JOptionPane.showInputDialog(
+                frame,
+                nombreEntrenador + ", elige tu Pokémon #" + (i + 1),
+                "Selección de Pokémon",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                opciones,
+                opciones[0]
+            );
+            int idx = -1;
+            for (int j = 0; j < listaPokemon.length; j++) {
+                if (opciones[j].equals(seleccion) && !ocupados[j]) {
+                    idx = j;
+                    ocupados[j] = true;
+                    break;
+                }
+            }
+            if (idx != -1) {
+                equipo.add(new Pokemon(listaPokemon[idx]));
+            } else {
+                i--; // Repetir selección si ya estaba ocupado
+            }
+        }
+        return equipo;
+    }
+
+    // Método para mostrar los equipos de los entrenadores
+    private void mostrarEquipos() {
+        if (entrenador1 == null || entrenador2 == null) {
+            JOptionPane.showMessageDialog(frame, "Ambos entrenadores deben tener equipos asignados.");
+            return;
+        }
+        StringBuilder equipos = new StringBuilder();
+        equipos.append("Equipo de ").append(entrenador1.getNombre()).append(":\n");
+        for (Pokemon p : entrenador1.getEquipo()) {
+            equipos.append(p.getNombre()).append(" (HP: ").append(p.getPuntosSalud()).append(")\n");
+        }
+        equipos.append("\nEquipo de ").append(entrenador2.getNombre()).append(":\n");
+        for (Pokemon p : entrenador2.getEquipo()) {
+            equipos.append(p.getNombre()).append(" (HP: ").append(p.getPuntosSalud()).append(")\n");
+        }
+        JOptionPane.showMessageDialog(frame, equipos.toString(), "Equipos", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void elegirPokemonInicial() {
+        // Selección del Pokémon inicial para Entrenador 1
+        String[] nombres1 = entrenador1.getEquipo().stream().map(Pokemon::getNombre).toArray(String[]::new);
+        String seleccion1 = (String) JOptionPane.showInputDialog(
+            frame,
+            "Entrenador 1, selecciona tu Pokémon inicial:",
+            "Seleccionar Pokémon Inicial",
+            JOptionPane.PLAIN_MESSAGE,
+            null,
+            nombres1,
+            nombres1[0]
+        );
+        for (int i = 0; i < nombres1.length; i++) {
+            if (nombres1[i].equals(seleccion1)) {
+                entrenador1.setPokemonInicial(entrenador1.getEquipo().get(i));
+                break;
+            }
+        }
+
+        // Selección del Pokémon inicial para Entrenador 2
+        String[] nombres2 = entrenador2.getEquipo().stream().map(Pokemon::getNombre).toArray(String[]::new);
+        String seleccion2 = (String) JOptionPane.showInputDialog(
+            frame,
+            "Entrenador 2, selecciona tu Pokémon inicial:",
+            "Seleccionar Pokémon Inicial",
+            JOptionPane.PLAIN_MESSAGE,
+            null,
+            nombres2,
+            nombres2[0]
+        );
+        for (int i = 0; i < nombres2.length; i++) {
+            if (nombres2[i].equals(seleccion2)) {
+                entrenador2.setPokemonInicial(entrenador2.getEquipo().get(i));
+                break;
+            }
+        }
+
+        turnoJugador1 = true;
+        actualizarPantalla();
+        ((CardLayout) frame.getContentPane().getLayout()).show(frame.getContentPane(), "batalla");
+    }
+
+    private ImageIcon cargarGif(String gifPath) {
+        java.net.URL url = getClass().getResource("/gifs/" + gifPath);
+        if (url != null) {
+            return new ImageIcon(url); // Cargar el GIF sin escalar para preservar la animación
+        } else {
+            System.err.println("Recurso no encontrado: /gifs/" + gifPath);
+            return null;
+        }
+    }
+
+    private void actualizarPantalla() {
+        SwingUtilities.invokeLater(() -> {
+            if (entrenador1 == null || entrenador2 == null) {
+                return; // No hay entrenadores
+            }
+
+            Pokemon p1 = entrenador1.getPokemonActual();
+            Pokemon p2 = entrenador2.getPokemonActual();
+
+            if (p1 == null || p2 == null) {
+                return; // No hay Pokémon para mostrar
+            }
+
+            nombreP1.setText(p1.getNombre());
+            nombreP2.setText(p2.getNombre());
+            hp1.setText("<html>HP: " + p1.getPuntosSalud() + "<br>At: " + p1.getAtaque() + "<br>Df: " + p1.getDefensa() + "<br>Ats: " + p1.getAtaqueEspecial() + "<br>DeS: " + p1.getDefensaEspecial() + "</html>");
+            hp2.setText("<html>HP: " + p2.getPuntosSalud() + "<br>At: " + p2.getAtaque() + "<br>Df: " + p2.getDefensa() + "<br>Ats: " + p2.getAtaqueEspecial() + "<br>DeS: " + p2.getDefensaEspecial() + "</html>");
+
+            String turno = turnoJugador1 ? "Turno de " + entrenador1.getNombre() : "Turno de " + entrenador2.getNombre();
+            frame.setTitle("Simulador de Batalla Pokémon - " + turno);
+
+            ataquesBox.removeAllItems();
+            Pokemon atacante = turnoJugador1 ? p1 : p2;
+            for (Ataque a : atacante.getAtaques()) {
+                ataquesBox.addItem(a.getNombre());
+            }
+
+            // Mostrar GIFs correctamente
+            ImageIcon icon1 = cargarGif(p1.getGifPath());
+            if (icon1 != null) {
+                gif1.setIcon(icon1);
+                gif1.setText("");
+            } else {
+                gif1.setIcon(null);
+                gif1.setText("GIF no encontrado");
+            }
+
+            ImageIcon icon2 = cargarGif(p2.getGifPath());
+            if (icon2 != null) {
+                gif2.setIcon(icon2);
+                gif2.setText("");
+            } else {
+                gif2.setIcon(null);
+                gif2.setText("GIF no encontrado");
+            }
+
+            // Forzar actualización de los componentes
+            gif1.revalidate();
+            gif1.repaint();
+            gif2.revalidate();
+            gif2.repaint();
+        });
+    }
+
+    private void ejecutarTurno() {
+        Pokemon atacante = turnoJugador1 ? entrenador1.getPokemonActual() : entrenador2.getPokemonActual();
+        Pokemon defensor = turnoJugador1 ? entrenador2.getPokemonActual() : entrenador1.getPokemonActual();
+
+        if (atacante == null) {
+            JOptionPane.showMessageDialog(frame, "No hay más Pokémon disponibles para atacar.");
+            finalizarJuego();
+            return;
+        }
+
+        int ataqueIndex = ataquesBox.getSelectedIndex();
+        if (ataqueIndex < 0) {
+            JOptionPane.showMessageDialog(frame, "Selecciona un ataque antes de continuar.");
+            return;
+        }
+
+        Ataque ataqueSeleccionado = atacante.getAtaques()[ataqueIndex];
+        int danio = atacante.calcularDanio(ataqueSeleccionado, defensor);
+        defensor.recibirDanio(danio);
+
+        JOptionPane.showMessageDialog(frame, atacante.getNombre() + " usó " + ataqueSeleccionado.getNombre() + " y causó " + danio + " puntos de daño.");
+
+        if (defensor.getPuntosSalud() <= 0) {
+            JOptionPane.showMessageDialog(frame, defensor.getNombre() + " se ha debilitado.");
+            if (turnoJugador1) {
+                entrenador2.siguientePokemon();
+                if (entrenador2.todosDebilitados()) {
+                    finalizarJuego();
+                    return;
+                }
+            } else {
+                entrenador1.siguientePokemon();
+                if (entrenador1.todosDebilitados()) {
+                    finalizarJuego();
+                    return;
+                }
+            }
+        }
+
+        turnoJugador1 = !turnoJugador1;
+        actualizarPantalla();
+    }
+
+    private void finalizarJuego() {
+        if (entrenador1.todosDebilitados() || entrenador2.todosDebilitados()) {
+            String ganador = entrenador1.todosDebilitados() ? entrenador2.getNombre() : entrenador1.getNombre();
+            JOptionPane.showMessageDialog(frame, "¡" + ganador + " gana la batalla!");
+            int resp = JOptionPane.showConfirmDialog(frame, "¿Deseas jugar otra vez?", "Fin de la batalla", JOptionPane.YES_NO_OPTION);
+            if (resp == JOptionPane.YES_OPTION) {
+                frame.dispose();
+                new Interfaz();
+            } else {
+                frame.dispose();
+            }
+        }
+    }
+}
