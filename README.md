@@ -1,4 +1,4 @@
-## INTEGRANTES DEL MINI PROYECTO #1
+## INTEGRANTES DEL MINI PROYECTO #3
 
 ------------------------------------------------------
 
