@@ -1,3 +1,10 @@
+package vista;
+
+import modelo.Entrenador;
+import modelo.Pokemon;
+import modelo.PokemonEnum;
+import modelo.Ataque;
+
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;

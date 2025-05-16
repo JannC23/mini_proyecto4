@@ -1,3 +1,4 @@
+package modelo;
 import java.util.ArrayList;
 
 // Clase que representa un entrenador Pokémon

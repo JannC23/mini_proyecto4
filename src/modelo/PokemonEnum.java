@@ -1,3 +1,4 @@
+package modelo;
 public enum PokemonEnum {
     CHARMANDER(1, "Charmander", Pokemon.Tipo.FUEGO, 180, 52, 43, 60, 50, 65, "charmander.gif"),
     BULBASAUR(2, "Bulbasaur", Pokemon.Tipo.PLANTA, 200, 49, 49, 65, 65, 45, "bulbasaur.gif"),
