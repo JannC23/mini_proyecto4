@@ -1,3 +1,4 @@
+package modelo;
 // Clase que representa un ataque que puede realizar un Pokémon
 public class Ataque {
     public enum TipoDanio { FISICO, ESPECIAL } // Tipos de daño que puede causar un ataque
