@@ -22,13 +22,14 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.Scanner;
 // Clase que representa la interfaz gráfica del simulador de batalla Pokémon
 // Aquí se maneja todo lo relacionado con la interacción del usuario y la visualización
 public class Interfaz {
     private JFrame frame; // Ventana principal donde se mostrará todo
     private JPanel panelInicio, panelBatalla; // Paneles para las diferentes pantallas (inicio y batalla)
     private JTextField nombre1Field, nombre2Field; // Campos de texto para que los jugadores ingresen sus nombres
-    private JButton btnAleatorio1, btnManual1, btnAleatorio2, btnManual2, btnBatalla; // Botones para las opciones de equipo
+    private JButton btnAleatorio1, btnManual1, btnAleatorio2, btnManual2, btnBatalla, btnReiniciar; // Botones para las opciones de equipo
     private JLabel nombreP1, nombreP2, hp1, hp2, gif1, gif2; // Etiquetas para mostrar información de los Pokémon
     private JComboBox<String> ataquesBox; // ComboBox para que el jugador seleccione un ataque
     private JButton btnAtacar; // Botón para realizar un ataque
@@ -36,22 +37,9 @@ public class Interfaz {
     private Entrenador entrenador1, entrenador2; // Objetos que representan a los entrenadores
     private boolean turnoJugador1 = true; // Variable para saber de quién es el turno (true = jugador 1)
 
-    // Constructor de la clase Interfaz
-    public Interfaz() {
-        frame = new JFrame("Simulador de Batalla Pokémon"); // Crear la ventana principal
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Cerrar la aplicación al cerrar la ventana
-        frame.setSize(900, 600); // Tamaño de la ventana
-        frame.setLayout(new CardLayout()); // Usamos CardLayout para cambiar entre pantallas
-
-        inicializarInicio(); // Llamamos al método que configura la pantalla de inicio
-        inicializarBatalla(); // Llamamos al método que configura la pantalla de batalla
-
-        frame.setVisible(true); // Hacemos visible la ventana
-    }
-
     // Método para configurar la pantalla de inicio
     private void inicializarInicio() {
-        panelInicio = new JPanel(new GridLayout(7, 2, 10, 10)); // Crear un panel con una cuadrícula de 7x2
+        panelInicio = new JPanel(new GridLayout(8, 2, 10, 10)); // Crear un panel con una cuadrícula de 8x2
         panelInicio.setBorder(BorderFactory.createEmptyBorder(40, 100, 40, 100)); // Agregar márgenes al panel
         panelInicio.setBackground(new Color(220, 240, 255)); // Fondo azul claro para que se vea bonito
 
@@ -64,6 +52,7 @@ public class Interfaz {
         btnManual2 = new JButton("Seleccionar Manualmente (Jugador 2)"); // Botón para seleccionar equipo manualmente para el jugador 2
         btnBatalla = new JButton("Iniciar Batalla"); // Botón para empezar la batalla
         btnVerEquiposInicio = new JButton("Ver Equipos"); // Botón para mostrar los equipos seleccionados
+        btnReiniciar = new JButton("Reiniciar Batalla"); // Botón para reiniciar la batalla
 
         // Agregar los componentes al panel de inicio
         panelInicio.add(new JLabel("Nombre Entrenador 1:")); // Etiqueta para el nombre del jugador 1
@@ -78,6 +67,8 @@ public class Interfaz {
         panelInicio.add(btnVerEquiposInicio); // Botón para ver los equipos
         panelInicio.add(new JLabel()); // Otro espacio vacío
         panelInicio.add(btnBatalla); // Botón para iniciar la batalla
+        panelInicio.add(new JLabel()); // Otro espacio vacío
+        panelInicio.add(btnReiniciar); // Botón para reiniciar la batalla
 
         // Configurar las acciones de los botones
         btnAleatorio1.addActionListener(e -> {
@@ -130,6 +121,14 @@ public class Interfaz {
                 return;
             }
             elegirPokemonInicial(); // Pasar a la selección de Pokémon inicial
+        });
+
+        btnReiniciar.addActionListener(e -> {
+            int resp = JOptionPane.showConfirmDialog(frame, "¿Deseas reiniciar la batalla?", "Reiniciar", JOptionPane.YES_NO_OPTION);
+            if (resp == JOptionPane.YES_OPTION) {
+                frame.dispose();
+                new Interfaz(); // Reinicia la interfaz gráfica
+            }
         });
 
         frame.add(panelInicio, "inicio"); // Agregar el panel de inicio a la ventana
@@ -398,6 +397,89 @@ public class Interfaz {
             } else {
                 frame.dispose();
             }
+        }
+    }
+
+    // Constructor que recibe los entrenadores
+    public Interfaz(Entrenador entrenador1, Entrenador entrenador2) {
+        this.entrenador1 = entrenador1;
+        this.entrenador2 = entrenador2;
+
+        frame = new JFrame("Simulador de Batalla Pokémon");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(900, 600);
+        frame.setLayout(new CardLayout());
+
+        inicializarInicio();
+        inicializarBatalla();
+
+        if (entrenador1 != null && entrenador2 != null) {
+            elegirPokemonInicial(); // Si los entrenadores ya están definidos, pasa directamente a la batalla
+        }
+
+        frame.setVisible(true); // Asegúrate de que la ventana sea visible
+    }
+
+    // Constructor vacío para compatibilidad con otras partes del código
+    public Interfaz() {
+        frame = new JFrame("Simulador de Batalla Pokémon");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(900, 600);
+        frame.setLayout(new CardLayout());
+
+        inicializarInicio();
+        inicializarBatalla();
+
+        frame.setVisible(true);
+    }
+
+    private void iniciarInterfaz() {
+        // Implementa la lógica para inicializar la GUI
+        System.out.println("Interfaz gráfica iniciada con los entrenadores:");
+        System.out.println("Entrenador 1: " + (entrenador1 != null ? entrenador1.getNombre() : "No definido"));
+        System.out.println("Entrenador 2: " + (entrenador2 != null ? entrenador2.getNombre() : "No definido"));
+    }
+
+    public void volverModoConsola() {
+        int respuesta = JOptionPane.showConfirmDialog(frame, "¿Deseas volver al modo consola?", "Modo Consola", JOptionPane.YES_NO_OPTION);
+        if (respuesta == JOptionPane.YES_OPTION) {
+            frame.dispose();
+            System.out.println("Volviendo al modo consola...");
+        } else {
+            System.out.println("Permaneciendo en la interfaz gráfica.");
+        }
+    }
+
+    // Método para manejar el turno en consola
+    private static void manejarTurnoConsola(Scanner scanner, Entrenador atacante, Entrenador defensor) {
+        System.out.println("\nTurno de " + atacante.getNombre());
+        Pokemon pokemonAtacante = atacante.getPokemonActual();
+        Pokemon pokemonDefensor = defensor.getPokemonActual();
+
+        System.out.println("Tu Pokémon: " + pokemonAtacante.getNombre() + " (HP: " + pokemonAtacante.getPuntosSalud() + ")");
+        System.out.println("Pokémon rival: " + pokemonDefensor.getNombre() + " (HP: " + pokemonDefensor.getPuntosSalud() + ")");
+
+        System.out.println("Elige un ataque:");
+        for (int i = 0; i < pokemonAtacante.getAtaques().length; i++) {
+            System.out.println((i + 1) + ". " + pokemonAtacante.getAtaques()[i].getNombre());
+        }
+
+        int ataqueIndex = -1;
+        while (ataqueIndex < 0 || ataqueIndex >= pokemonAtacante.getAtaques().length) {
+            System.out.print("Ingresa el número del ataque: ");
+            ataqueIndex = scanner.nextInt() - 1;
+            if (ataqueIndex < 0 || ataqueIndex >= pokemonAtacante.getAtaques().length) {
+                System.out.println("Ataque no válido. Inténtalo de nuevo.");
+            }
+        }
+
+        int danio = pokemonAtacante.calcularDanio(pokemonAtacante.getAtaques()[ataqueIndex], pokemonDefensor);
+        pokemonDefensor.recibirDanio(danio);
+        System.out.println(pokemonAtacante.getNombre() + " usó " + pokemonAtacante.getAtaques()[ataqueIndex].getNombre() + " y causó " + danio + " puntos de daño.");
+
+        if (pokemonDefensor.getPuntosSalud() <= 0) {
+            System.out.println(pokemonDefensor.getNombre() + " se ha debilitado.");
+            defensor.siguientePokemon();
         }
     }
 }
