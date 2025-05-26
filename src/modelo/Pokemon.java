@@ -160,39 +160,36 @@ public class Pokemon {
     public static ArrayList<Pokemon> seleccionarEquipoPokemon() {
         Scanner entrada = new Scanner(System.in);
         PokemonEnum[] listaPokemon = PokemonEnum.values();
-        ArrayList<Pokemon> equipo = new ArrayList<>(); // Lista de los 3 Pokemon seleccionados
-        boolean[] ocupados = new boolean[listaPokemon.length]; // Array para marcar los Pokemon seleccionados
+        ArrayList<Pokemon> equipo = new ArrayList<>();
+        boolean[] ocupados = new boolean[listaPokemon.length];
 
-        for (int j = 0; j < 3; j++) { // Seleccionar 3 Pokemon
+        for (int j = 0; j < 3; j++) {
             System.out.println("\nSelecciona el Pokemon " + (j + 1) + ":");
-            for (int i = 0; i < listaPokemon.length; i++) { // Mostrar lista de Pokemon disponibles
+            for (int i = 0; i < listaPokemon.length; i++) {
                 System.out.println((i + 1) + ". " + listaPokemon[i].getNombre() + " (TIPO: " + listaPokemon[i].getTipo() + ") - VIDA: " + listaPokemon[i].getPuntosSalud());
             }
 
-            int opcion;
-            Pokemon pokemonSeleccionado = null;
-
-            do {
-                System.out.print("\nIngresa el numero del Pokemon que deseas (1-" + listaPokemon.length + "): ");
-                opcion = entrada.nextInt();
-
-                // Verificar si la opcion es valida y si el Pokemon ya fue elegido
-                if (opcion >= 1 && opcion <= listaPokemon.length) {
-                    if (!ocupados[opcion - 1]) { // Verificar si el Pokemon no ha sido seleccionado antes
-                        pokemonSeleccionado = new Pokemon(listaPokemon[opcion - 1]); // Crear el Pokemon
-                        ocupados[opcion - 1] = true; // Marcar como seleccionado
-                    } else {
+            int opcion = -1;
+            while (opcion < 1 || opcion > listaPokemon.length || ocupados[opcion - 1]) {
+                System.out.print("\nIngresa el número del Pokemon que deseas (1-" + listaPokemon.length + "): ");
+                if (entrada.hasNextInt()) {
+                    opcion = entrada.nextInt();
+                    if (opcion < 1 || opcion > listaPokemon.length) {
+                        System.out.println("Opción no válida. Intenta nuevamente.");
+                    } else if (ocupados[opcion - 1]) {
                         System.out.println("Ese Pokemon ya fue seleccionado. Elige otro.");
                     }
                 } else {
-                    System.out.println("Opcion no valida. Intenta nuevamente.");
+                    System.out.println("Entrada inválida. Ingresa un número.");
+                    entrada.next(); // Consumir entrada inválida
                 }
-            } while (pokemonSeleccionado == null); // Repetir hasta que se seleccione un Pokemon valido
+            }
 
-            equipo.add(pokemonSeleccionado); // Agregar al equipo
+            equipo.add(new Pokemon(listaPokemon[opcion - 1]));
+            ocupados[opcion - 1] = true;
         }
 
-        return equipo; // Retorna el equipo completo
+        return equipo;
     }
 
     public static ArrayList<Pokemon> crearPokemonAleatorio() {
