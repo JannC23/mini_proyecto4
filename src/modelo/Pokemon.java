@@ -134,6 +134,12 @@ public class Pokemon {
     }
 
     public int calcularDanio(Ataque ataque, Pokemon oponente) {
+        if (this.puntosSalud <= 0) {
+            throw new Excepciones.PokemonDebilitadoException("No puedes usar un Pokémon debilitado: " + this.nombre);
+        }
+        if (oponente.puntosSalud <= 0) {
+            throw new Excepciones.PokemonDebilitadoException("No puedes atacar a un Pokémon ya debilitado: " + oponente.nombre);
+        }
         int nivel = 50; // Nivel fijo
         int ataqueUsado = ataque.getTipoDano().equals("Físico") ? this.ataque : this.ataqueEspecial;
         int defensaOponente = ataque.getTipoDano().equals("Físico") ? oponente.getDefensa() : oponente.getDefensaEspecial();
@@ -177,7 +183,8 @@ public class Pokemon {
                     if (opcion < 1 || opcion > listaPokemon.length) {
                         System.out.println("Opción no válida. Intenta nuevamente.");
                     } else if (ocupados[opcion - 1]) {
-                        System.out.println("Ese Pokemon ya fue seleccionado. Elige otro.");
+                        // Lanza la excepción si el Pokémon ya fue elegido
+                        throw new Excepciones.PokemonRepetidoEnEquipoException("No puedes elegir el mismo Pokémon dos veces en tu equipo.");
                     }
                 } else {
                     System.out.println("Entrada inválida. Ingresa un número.");

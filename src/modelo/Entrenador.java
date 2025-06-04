@@ -61,4 +61,8 @@ public class Entrenador {
         }
         return true;
     }
+
+    public void setPokemonActual(int indice) {
+        this.actual = indice;
+    }
 }

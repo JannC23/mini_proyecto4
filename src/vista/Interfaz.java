@@ -1,6 +1,7 @@
 package vista;
 
 import modelo.Entrenador;
+import modelo.Excepciones;
 import modelo.Pokemon;
 import modelo.PokemonEnum;
 import modelo.Ataque;
@@ -36,6 +37,7 @@ public class Interfaz {
     private JButton btnVerEquiposInicio; // Botón para ver los equipos seleccionados antes de la batalla
     private Entrenador entrenador1, entrenador2; // Objetos que representan a los entrenadores
     private boolean turnoJugador1 = true; // Variable para saber de quién es el turno (true = jugador 1)
+    private JButton btnCambiarPokemon; // Agrega este atributo
 
     // Método para configurar la pantalla de inicio
     private void inicializarInicio() {
@@ -89,7 +91,11 @@ public class Interfaz {
                 return;
             }
             entrenador1 = new Entrenador(n1); // Crear el entrenador 1
-            entrenador1.setEquipo(seleccionarEquipoManual(entrenador1.getNombre())); // Asignar un equipo manual
+            try {
+                entrenador1.setEquipo(seleccionarEquipoManual(entrenador1.getNombre()));
+            } catch (Excepciones.PokemonRepetidoEnEquipoException ex) {
+                JOptionPane.showMessageDialog(frame, ex.getMessage());
+            }
         });
 
         btnAleatorio2.addActionListener(e -> {
@@ -110,7 +116,13 @@ public class Interfaz {
                 return;
             }
             entrenador2 = new Entrenador(n2); // Crear el entrenador 2
-            entrenador2.setEquipo(seleccionarEquipoManual(entrenador2.getNombre())); // Asignar un equipo manual
+            try {
+                // Intenta asignar el equipo manualmente y verifica si hay Pokémon repetidos
+                entrenador2.setEquipo(seleccionarEquipoManual(entrenador2.getNombre()));
+            } catch (Excepciones.PokemonRepetidoEnEquipoException ex) {
+                // Si hay Pokémon repetidos, muestra el mensaje de error
+                JOptionPane.showMessageDialog(frame, ex.getMessage());
+            }
         });
 
         btnVerEquiposInicio.addActionListener(e -> mostrarEquipos()); // Mostrar los equipos seleccionados
@@ -168,13 +180,16 @@ public class Interfaz {
         JPanel panelControles = new JPanel(); // Panel para los controles de batalla
         ataquesBox = new JComboBox<>(); // ComboBox para seleccionar ataques
         btnAtacar = new JButton("Atacar"); // Botón para realizar un ataque
+        btnCambiarPokemon = new JButton("Cambiar Pokémon");
         panelControles.add(ataquesBox); // Agregar el ComboBox al panel
         panelControles.add(btnAtacar); // Agregar el botón al panel
+        panelControles.add(btnCambiarPokemon); // Agregar el botón de cambiar Pokémon
 
         panelInf.add(panelAtributos); // Agregar los atributos al panel inferior
         panelInf.add(panelControles); // Agregar los controles al panel inferior
 
         btnAtacar.addActionListener(e -> ejecutarTurno()); // Configurar la acción del botón "Atacar"
+        btnCambiarPokemon.addActionListener(e -> cambiarPokemon());
 
         panelBatalla.add(panelSup, BorderLayout.CENTER); // Agregar el panel superior al centro
         panelBatalla.add(panelInf, BorderLayout.SOUTH); // Agregar el panel inferior abajo
@@ -184,39 +199,43 @@ public class Interfaz {
 
     // Método para seleccionar un equipo manualmente
     private ArrayList<Pokemon> seleccionarEquipoManual(String nombreEntrenador) {
-        ArrayList<Pokemon> equipo = new ArrayList<>();
-        PokemonEnum[] listaPokemon = PokemonEnum.values();
-        boolean[] ocupados = new boolean[listaPokemon.length];
+        ArrayList<Pokemon> equipo = new ArrayList<>(); // Crea una lista vacía para el equipo del entrenador
+        PokemonEnum[] listaPokemon = PokemonEnum.values(); // Obtiene todos los Pokémon disponibles como un arreglo
+        boolean[] ocupados = new boolean[listaPokemon.length]; // Arreglo para marcar si un Pokémon ya fue elegido
 
-        for (int i = 0; i < 3; i++) {
-            String[] opciones = new String[listaPokemon.length];
+        for (int i = 0; i < 3; i++) { // Se repite 3 veces para elegir 3 Pokémon
+            String[] opciones = new String[listaPokemon.length]; // Arreglo de nombres de Pokémon para mostrar en el diálogo
             for (int j = 0; j < listaPokemon.length; j++) {
-                opciones[j] = listaPokemon[j].getNombre();
+                opciones[j] = listaPokemon[j].getNombre(); // Llena el arreglo con los nombres de los Pokémon
             }
             String seleccion = (String) JOptionPane.showInputDialog(
                 frame,
-                nombreEntrenador + ", elige tu Pokémon #" + (i + 1),
+                nombreEntrenador + ", elige tu Pokémon #" + (i + 1), // Mensaje personalizado para el entrenador
                 "Selección de Pokémon",
                 JOptionPane.PLAIN_MESSAGE,
                 null,
                 opciones,
                 opciones[0]
             );
-            int idx = -1;
+            int idx = -1; // Índice del Pokémon seleccionado
             for (int j = 0; j < listaPokemon.length; j++) {
-                if (opciones[j].equals(seleccion) && !ocupados[j]) {
-                    idx = j;
-                    ocupados[j] = true;
-                    break;
+                if (opciones[j].equals(seleccion)) { // Si el nombre coincide con la selección del usuario
+                    if (ocupados[j]) { // Si ese Pokémon ya fue elegido antes
+                        // Lanza la excepción si el Pokémon ya fue elegido
+                        throw new Excepciones.PokemonRepetidoEnEquipoException("No puedes elegir el mismo Pokémon dos veces en tu equipo.");
+                    }
+                    idx = j; // Guarda el índice del Pokémon seleccionado
+                    ocupados[j] = true; // Marca ese Pokémon como ya elegido
+                    break; // Sale del ciclo porque ya encontró el seleccionado
                 }
             }
             if (idx != -1) {
-                equipo.add(new Pokemon(listaPokemon[idx]));
+                equipo.add(new Pokemon(listaPokemon[idx])); // Si la selección fue válida, agrega el Pokémon al equipo
             } else {
-                i--; // Repetir selección si ya estaba ocupado
+                i--; // Si hubo error (no se seleccionó un Pokémon válido), repite la selección para este turno
             }
         }
-        return equipo;
+        return equipo; // Devuelve el equipo seleccionado
     }
 
     // Método para mostrar los equipos de los entrenadores
@@ -359,31 +378,34 @@ public class Interfaz {
             return;
         }
 
-        Ataque ataqueSeleccionado = atacante.getAtaques()[ataqueIndex];
-        int danio = atacante.calcularDanio(ataqueSeleccionado, defensor);
-        defensor.recibirDanio(danio);
+        try {
+            Ataque ataqueSeleccionado = atacante.getAtaques()[ataqueIndex];
+            int danio = atacante.calcularDanio(ataqueSeleccionado, defensor);
+            defensor.recibirDanio(danio);
+            JOptionPane.showMessageDialog(frame, atacante.getNombre() + " usó " + ataqueSeleccionado.getNombre() + " y causó " + danio + " puntos de daño.");
 
-        JOptionPane.showMessageDialog(frame, atacante.getNombre() + " usó " + ataqueSeleccionado.getNombre() + " y causó " + danio + " puntos de daño.");
-
-        if (defensor.getPuntosSalud() <= 0) {
-            JOptionPane.showMessageDialog(frame, defensor.getNombre() + " se ha debilitado.");
-            if (turnoJugador1) {
-                entrenador2.siguientePokemon();
-                if (entrenador2.todosDebilitados()) {
-                    finalizarJuego();
-                    return;
-                }
-            } else {
-                entrenador1.siguientePokemon();
-                if (entrenador1.todosDebilitados()) {
-                    finalizarJuego();
-                    return;
+            if (defensor.getPuntosSalud() <= 0) {
+                JOptionPane.showMessageDialog(frame, defensor.getNombre() + " se ha debilitado.");
+                if (turnoJugador1) {
+                    entrenador2.siguientePokemon();
+                    if (entrenador2.todosDebilitados()) {
+                        finalizarJuego();
+                        return;
+                    }
+                } else {
+                    entrenador1.siguientePokemon();
+                    if (entrenador1.todosDebilitados()) {
+                        finalizarJuego();
+                        return;
+                    }
                 }
             }
-        }
 
-        turnoJugador1 = !turnoJugador1;
-        actualizarPantalla();
+            turnoJugador1 = !turnoJugador1;
+            actualizarPantalla();
+        } catch (Excepciones.PokemonDebilitadoException e) {
+            JOptionPane.showMessageDialog(frame, e.getMessage());
+        }
     }
 
     private void finalizarJuego() {
@@ -480,6 +502,63 @@ public class Interfaz {
         if (pokemonDefensor.getPuntosSalud() <= 0) {
             System.out.println(pokemonDefensor.getNombre() + " se ha debilitado.");
             defensor.siguientePokemon();
+        }
+    }
+
+    private void cambiarPokemon() {
+        // Determina el entrenador actual según el turno
+        Entrenador actual = turnoJugador1 ? entrenador1 : entrenador2;
+        // Obtiene el Pokémon actualmente en batalla
+        Pokemon actualPokemon = actual.getPokemonActual();
+
+        // Construir lista de opciones de Pokémon disponibles para cambiar (excluyendo el actual)
+        ArrayList<Pokemon> disponibles = new ArrayList<>();
+        for (Pokemon p : actual.getEquipo()) {
+            if (p != actualPokemon) { // Solo agrega si no es el Pokémon actual
+                disponibles.add(p);
+            }
+        }
+        // Si no hay otros Pokémon disponibles, muestra mensaje y termina
+        if (disponibles.isEmpty()) {
+            JOptionPane.showMessageDialog(frame, "No tienes otros Pokémon disponibles.");
+            return;
+        }
+
+        // Prepara los nombres de los Pokémon disponibles para mostrar en el diálogo
+        String[] nombres = disponibles.stream().map(Pokemon::getNombre).toArray(String[]::new);
+        // Muestra un cuadro de diálogo para seleccionar el Pokémon al que se desea cambiar
+        String seleccion = (String) JOptionPane.showInputDialog(
+                frame,
+                "Selecciona el Pokémon al que deseas cambiar:",
+                "Cambiar Pokémon",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                nombres,
+                nombres[0]
+        );
+        // Si el usuario seleccionó un Pokémon (no canceló)
+        if (seleccion != null) {
+            for (Pokemon p : disponibles) {
+                if (p.getNombre().equals(seleccion)) { // Encuentra el Pokémon seleccionado
+                    try {
+                        // Si el Pokémon está debilitado, lanza la excepción personalizada
+                        if (p.getPuntosSalud() <= 0) {
+                            throw new Excepciones.PokemonDebilitadoException("No puedes cambiar a un Pokémon debilitado.");
+                        }
+                        // Cambia el Pokémon actual del entrenador
+                        actual.setPokemonInicial(p);
+                        // Muestra mensaje de éxito
+                        JOptionPane.showMessageDialog(frame, "¡Has cambiado a " + p.getNombre() + "!");
+                        // Cambia el turno y actualiza la pantalla solo si el cambio fue exitoso
+                        turnoJugador1 = !turnoJugador1;
+                        actualizarPantalla();
+                    } catch (Excepciones.PokemonDebilitadoException e) {
+                        // Si ocurre la excepción, muestra el mensaje de error y no cambia el turno
+                        JOptionPane.showMessageDialog(frame, e.getMessage());
+                    }
+                    break; // Sale del ciclo después de procesar la selección
+                }
+            }
         }
     }
 }
