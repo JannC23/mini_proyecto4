@@ -55,6 +55,7 @@ public class Interfaz {
         btnBatalla = new JButton("Iniciar Batalla"); // Botón para empezar la batalla
         btnVerEquiposInicio = new JButton("Ver Equipos"); // Botón para mostrar los equipos seleccionados
         btnReiniciar = new JButton("Reiniciar Batalla"); // Botón para reiniciar la batalla
+        JButton btnCargarPartida = new JButton("Cargar Partida"); // Botón para cargar partida
 
         // Agregar los componentes al panel de inicio
         panelInicio.add(new JLabel("Nombre Entrenador 1:")); // Etiqueta para el nombre del jugador 1
@@ -71,6 +72,8 @@ public class Interfaz {
         panelInicio.add(btnBatalla); // Botón para iniciar la batalla
         panelInicio.add(new JLabel()); // Otro espacio vacío
         panelInicio.add(btnReiniciar); // Botón para reiniciar la batalla
+        panelInicio.add(new JLabel()); // Espacio vacío para alinear el botón al final
+        panelInicio.add(btnCargarPartida); // Botón para cargar partida
 
         // Configurar las acciones de los botones
         btnAleatorio1.addActionListener(e -> {
@@ -151,7 +154,7 @@ public class Interfaz {
         panelBatalla = new JPanel(new BorderLayout()); // Crear un panel con diseño BorderLayout
 
         // Panel superior para mostrar los Pokémon y sus atributos
-        JPanel panelSup = new JPanel(new GridLayout(2, 3)); // Crear un panel con una cuadrícula de 2x3
+        JPanel panelSup = new JPanel(new GridLayout(2, 5)); // Crear un panel con una cuadrícula de 2x5
         nombreP1 = new JLabel("", SwingConstants.CENTER); // Etiqueta para el nombre del Pokémon del jugador 1
         nombreP2 = new JLabel("", SwingConstants.CENTER); // Etiqueta para el nombre del Pokémon del jugador 2
         hp1 = new JLabel("", SwingConstants.CENTER); // Etiqueta para los puntos de salud del jugador 1
@@ -181,18 +184,32 @@ public class Interfaz {
         ataquesBox = new JComboBox<>(); // ComboBox para seleccionar ataques
         btnAtacar = new JButton("Atacar"); // Botón para realizar un ataque
         btnCambiarPokemon = new JButton("Cambiar Pokémon");
+        JButton btnGuardarPartida = new JButton("Guardar Partida"); // Botón para guardar la partida
+        JButton btnHistorial = new JButton("Historial de movimientos");
+        
         panelControles.add(ataquesBox); // Agregar el ComboBox al panel
         panelControles.add(btnAtacar); // Agregar el botón al panel
         panelControles.add(btnCambiarPokemon); // Agregar el botón de cambiar Pokémon
+        panelControles.add(btnGuardarPartida); // Agregar el botón de guardar partida
+        panelControles.add(btnHistorial); // Agregar el botón de historial de movimientos
 
         panelInf.add(panelAtributos); // Agregar los atributos al panel inferior
         panelInf.add(panelControles); // Agregar los controles al panel inferior
 
+        panelBatalla.add(panelSup, BorderLayout.CENTER); // Panel central con los Pokémon
+        panelBatalla.add(panelInf, BorderLayout.SOUTH);  // Panel inferior con controles
+
         btnAtacar.addActionListener(e -> ejecutarTurno()); // Configurar la acción del botón "Atacar"
         btnCambiarPokemon.addActionListener(e -> cambiarPokemon());
-
-        panelBatalla.add(panelSup, BorderLayout.CENTER); // Agregar el panel superior al centro
-        panelBatalla.add(panelInf, BorderLayout.SOUTH); // Agregar el panel inferior abajo
+        btnHistorial.addActionListener(e -> {
+            JPanel panelHistorial = new JPanel(new BorderLayout());
+            panelHistorial.setPreferredSize(new Dimension(350, 300));
+            panelHistorial.setBorder(BorderFactory.createTitledBorder("Historial de movimientos"));
+            javax.swing.JTextArea area = new javax.swing.JTextArea();
+            area.setEditable(false);
+            panelHistorial.add(new javax.swing.JScrollPane(area), BorderLayout.CENTER);
+            JOptionPane.showMessageDialog(frame, panelHistorial, "Historial de movimientos", JOptionPane.PLAIN_MESSAGE);
+        });
 
         frame.add(panelBatalla, "batalla"); // Agregar el panel de batalla a la ventana
     }
