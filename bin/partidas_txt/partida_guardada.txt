@@ -1,0 +1,10 @@
+jorge
+jann
+E1;Charmander;0
+E1;Bulbasaur;178
+E1;Pikachu;150
+E1_ACTUAL;Bulbasaur
+E2;Squirtle;31
+E2;Psyduck;190
+E2;Jolteon;200
+E2_ACTUAL;Squirtle

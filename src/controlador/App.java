@@ -7,6 +7,13 @@ import modelo.Excepciones;
 
 import java.util.Scanner;
 import javax.swing.SwingUtilities;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class App {
     private static boolean enInterfazGrafica = false; // Bandera para saber si está en la interfaz gráfica
@@ -22,21 +29,24 @@ public class App {
                 System.out.println("1. Interfaz Gráfica");
                 System.out.println("2. Consola");
                 System.out.println("3. Salir");
-                System.out.print("Ingresa tu elección (1, 2 o 3): ");
+                System.out.println("4. Cargar partida (para consola)");
+                System.out.print("Ingresa tu elección (1, 2, 3 o 4): ");
                 int opcion = scanner.nextInt();
                 scanner.nextLine(); // Consumir el salto de línea pendiente
 
                 if (opcion == 1) {
                     enInterfazGrafica = true;
-                    SwingUtilities.invokeLater(() -> new Interfaz(entrenador1, entrenador2)); // Asegura que la GUI se ejecute en el hilo de eventos de Swing
+                    SwingUtilities.invokeLater(() -> new Interfaz(entrenador1, entrenador2));
                 } else if (opcion == 2) {
                     if (entrenador1 == null || entrenador2 == null) {
-                        configurarEntrenadores(scanner); // Configurar entrenadores si no están definidos
+                        configurarEntrenadores(scanner);
                     }
-                    iniciarBatallaConsola(scanner); // Inicia la batalla en consola
+                    iniciarBatallaConsola(scanner);
                 } else if (opcion == 3) {
                     System.out.println("Saliendo del programa...");
                     break;
+                } else if (opcion == 4) {
+                    cargarPartidaConsola();
                 } else {
                     System.out.println("Opción no válida. Inténtalo de nuevo.");
                 }
@@ -114,20 +124,28 @@ public class App {
             System.out.println("Tu Pokémon: " + pokemonAtacante.getNombre() + " (HP: " + pokemonAtacante.getPuntosSalud() + ")");
             System.out.println("Pokémon rival: " + pokemonDefensor.getNombre() + " (HP: " + pokemonDefensor.getPuntosSalud() + ")");
 
-            boolean accionValida = false; // Solo avanza el turno si la acción fue válida
+            boolean accionValida = false;
 
             while (!accionValida) {
                 System.out.println("¿Qué deseas hacer?");
                 System.out.println("1. Atacar");
                 System.out.println("2. Cambiar de Pokémon");
+                System.out.println("3. Guardar partida");
                 int accion = -1;
-                while (accion != 1 && accion != 2) {
-                    System.out.print("Elige una opción (1-2): ");
+                while (accion < 1 || accion > 3) {
+                    System.out.print("Elige una opción (1-3): ");
                     if (scanner.hasNextInt()) {
                         accion = scanner.nextInt();
                     } else {
                         scanner.next();
                     }
+                }
+
+                if (accion == 3) {
+                    guardarPartidaConsola();
+                    System.out.println("Partida guardada.");
+                    // No avanza el turno, permite seguir eligiendo acción
+                    continue;
                 }
 
                 if (accion == 2) {
@@ -208,5 +226,71 @@ public class App {
 
         String ganador = entrenador1.todosDebilitados() ? entrenador2.getNombre() : entrenador1.getNombre();
         System.out.println("\n¡" + ganador + " gana la batalla!");
+    }
+
+    // Método para guardar la partida en consola
+    private static void guardarPartidaConsola() {
+        File carpeta = new File("src/partidas_txt");
+        if (!carpeta.exists()) carpeta.mkdirs();
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter("src/partidas_txt/partida_guardada.txt"))) {
+            writer.println(entrenador1.getNombre());
+            writer.println(entrenador2.getNombre());
+            for (Pokemon p : entrenador1.getEquipo()) {
+                writer.println("E1;" + p.getNombre() + ";" + p.getPuntosSalud());
+            }
+            writer.println("E1_ACTUAL;" + entrenador1.getPokemonActual().getNombre());
+            for (Pokemon p : entrenador2.getEquipo()) {
+                writer.println("E2;" + p.getNombre() + ";" + p.getPuntosSalud());
+            }
+            writer.println("E2_ACTUAL;" + entrenador2.getPokemonActual().getNombre());
+            // No se guarda el historial ni el turno en consola, pero puedes agregarlo si lo deseas
+            System.out.println("¡Partida guardada exitosamente!");
+        } catch (IOException e) {
+            System.out.println("Error al guardar la partida: " + e.getMessage());
+        }
+    }
+
+    // Método para cargar una partida guardada en consola
+    private static void cargarPartidaConsola() {
+        File archivo = new File("src/partidas_txt/partida_guardada.txt");
+        if (!archivo.exists()) {
+            System.out.println("No hay ninguna partida guardada.");
+            return;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+            String nombre1 = reader.readLine();
+            String nombre2 = reader.readLine();
+            entrenador1 = new Entrenador(nombre1);
+            entrenador2 = new Entrenador(nombre2);
+            ArrayList<Pokemon> equipo1 = new ArrayList<>();
+            ArrayList<Pokemon> equipo2 = new ArrayList<>();
+            String actual1 = null, actual2 = null;
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                if (linea.startsWith("E1;")) {
+                    String[] parts = linea.split(";");
+                    Pokemon p = new Pokemon(modelo.PokemonEnum.valueOf(parts[1].toUpperCase()));
+                    p.recibirDanio(p.getPuntosSalud() - Integer.parseInt(parts[2]));
+                    equipo1.add(p);
+                } else if (linea.startsWith("E2;")) {
+                    String[] parts = linea.split(";");
+                    Pokemon p = new Pokemon(modelo.PokemonEnum.valueOf(parts[1].toUpperCase()));
+                    p.recibirDanio(p.getPuntosSalud() - Integer.parseInt(parts[2]));
+                    equipo2.add(p);
+                } else if (linea.startsWith("E1_ACTUAL;")) {
+                    actual1 = linea.split(";")[1];
+                } else if (linea.startsWith("E2_ACTUAL;")) {
+                    actual2 = linea.split(";")[1];
+                }
+            }
+            entrenador1.setEquipo(equipo1);
+            entrenador2.setEquipo(equipo2);
+            for (Pokemon p : equipo1) if (p.getNombre().equals(actual1)) entrenador1.setPokemonInicial(p);
+            for (Pokemon p : equipo2) if (p.getNombre().equals(actual2)) entrenador2.setPokemonInicial(p);
+            System.out.println("¡Partida cargada exitosamente!");
+        } catch (IOException e) {
+            System.out.println("Error al cargar la partida: " + e.getMessage());
+        }
     }
 }
