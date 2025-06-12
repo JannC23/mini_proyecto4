@@ -23,7 +23,17 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.LinkedList; // Para la lista enlazada
+import java.util.HashMap; // Para la tabla hash
 import java.util.Scanner;
+import java.util.Stack; // Importar Stack para el historial
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException; // Para guardar/cargar archivos
+
 // Clase que representa la interfaz gráfica del simulador de batalla Pokémon
 // Aquí se maneja todo lo relacionado con la interacción del usuario y la visualización
 public class Interfaz {
@@ -31,13 +41,21 @@ public class Interfaz {
     private JPanel panelInicio, panelBatalla; // Paneles para las diferentes pantallas (inicio y batalla)
     private JTextField nombre1Field, nombre2Field; // Campos de texto para que los jugadores ingresen sus nombres
     private JButton btnAleatorio1, btnManual1, btnAleatorio2, btnManual2, btnBatalla, btnReiniciar; // Botones para las opciones de equipo
+    private JButton btnVerEquiposInicio;
+    private JButton btnGuardarPartida, btnCargarPartida; // Ahora atributos de clase
     private JLabel nombreP1, nombreP2, hp1, hp2, gif1, gif2; // Etiquetas para mostrar información de los Pokémon
     private JComboBox<String> ataquesBox; // ComboBox para que el jugador seleccione un ataque
-    private JButton btnAtacar; // Botón para realizar un ataque
-    private JButton btnVerEquiposInicio; // Botón para ver los equipos seleccionados antes de la batalla
+    private JButton btnAtacar, btnCambiarPokemon; // Botón para realizar un ataque
     private Entrenador entrenador1, entrenador2; // Objetos que representan a los entrenadores
     private boolean turnoJugador1 = true; // Variable para saber de quién es el turno (true = jugador 1)
-    private JButton btnCambiarPokemon; // Agrega este atributo
+    private Stack<String> historialMovimientos = new Stack<>(); // Pila para el historial de movimientos
+
+    // Lista enlazada para el orden de turnos //
+    private LinkedList<Pokemon> ordenTurnos = new LinkedList<>();
+
+    // HashMap para búsquedas rápidas por nombre y tipo //
+    private HashMap<String, Pokemon> pokemonsPorNombre = new HashMap<>();
+    private HashMap<Pokemon.Tipo, ArrayList<Pokemon>> pokemonsPorTipo = new HashMap<>();
 
     // Método para configurar la pantalla de inicio
     private void inicializarInicio() {
@@ -55,7 +73,8 @@ public class Interfaz {
         btnBatalla = new JButton("Iniciar Batalla"); // Botón para empezar la batalla
         btnVerEquiposInicio = new JButton("Ver Equipos"); // Botón para mostrar los equipos seleccionados
         btnReiniciar = new JButton("Reiniciar Batalla"); // Botón para reiniciar la batalla
-        JButton btnCargarPartida = new JButton("Cargar Partida"); // Botón para cargar partida
+        btnGuardarPartida = new JButton("Guardar Partida"); // Ahora es atributo de clase
+        btnCargarPartida = new JButton("Cargar Partida"); // Ahora es atributo de clase
 
         // Agregar los componentes al panel de inicio
         panelInicio.add(new JLabel("Nombre Entrenador 1:")); // Etiqueta para el nombre del jugador 1
@@ -72,8 +91,8 @@ public class Interfaz {
         panelInicio.add(btnBatalla); // Botón para iniciar la batalla
         panelInicio.add(new JLabel()); // Otro espacio vacío
         panelInicio.add(btnReiniciar); // Botón para reiniciar la batalla
-        panelInicio.add(new JLabel()); // Espacio vacío para alinear el botón al final
-        panelInicio.add(btnCargarPartida); // Botón para cargar partida
+        panelInicio.add(btnGuardarPartida); // Ahora sí se agrega el botón de guardar partida
+        panelInicio.add(btnCargarPartida);
 
         // Configurar las acciones de los botones
         btnAleatorio1.addActionListener(e -> {
@@ -145,6 +164,8 @@ public class Interfaz {
                 new Interfaz(); // Reinicia la interfaz gráfica
             }
         });
+        btnGuardarPartida.addActionListener(e -> guardarPartida()); // Listener global
+        btnCargarPartida.addActionListener(e -> cargarPartida());
 
         frame.add(panelInicio, "inicio"); // Agregar el panel de inicio a la ventana
     }
@@ -184,13 +205,12 @@ public class Interfaz {
         ataquesBox = new JComboBox<>(); // ComboBox para seleccionar ataques
         btnAtacar = new JButton("Atacar"); // Botón para realizar un ataque
         btnCambiarPokemon = new JButton("Cambiar Pokémon");
-        JButton btnGuardarPartida = new JButton("Guardar Partida"); // Botón para guardar la partida
         JButton btnHistorial = new JButton("Historial de movimientos");
-        
+
         panelControles.add(ataquesBox); // Agregar el ComboBox al panel
         panelControles.add(btnAtacar); // Agregar el botón al panel
         panelControles.add(btnCambiarPokemon); // Agregar el botón de cambiar Pokémon
-        panelControles.add(btnGuardarPartida); // Agregar el botón de guardar partida
+        panelControles.add(btnGuardarPartida); // Agregar el botón al panel
         panelControles.add(btnHistorial); // Agregar el botón de historial de movimientos
 
         panelInf.add(panelAtributos); // Agregar los atributos al panel inferior
@@ -202,11 +222,21 @@ public class Interfaz {
         btnAtacar.addActionListener(e -> ejecutarTurno()); // Configurar la acción del botón "Atacar"
         btnCambiarPokemon.addActionListener(e -> cambiarPokemon());
         btnHistorial.addActionListener(e -> {
+            // Panel para mostrar el historial de movimientos
             JPanel panelHistorial = new JPanel(new BorderLayout());
             panelHistorial.setPreferredSize(new Dimension(350, 300));
             panelHistorial.setBorder(BorderFactory.createTitledBorder("Historial de movimientos"));
             javax.swing.JTextArea area = new javax.swing.JTextArea();
             area.setEditable(false);
+
+            // Mostrar los movimientos desde el más reciente al más antiguo
+            StringBuilder sb = new StringBuilder();
+            // Recorremos la pila desde el tope hacia abajo
+            for (int i = historialMovimientos.size() - 1; i >= 0; i--) {
+                sb.append(historialMovimientos.get(i)).append("\n");
+            }
+            area.setText(sb.toString());
+
             panelHistorial.add(new javax.swing.JScrollPane(area), BorderLayout.CENTER);
             JOptionPane.showMessageDialog(frame, panelHistorial, "Historial de movimientos", JOptionPane.PLAIN_MESSAGE);
         });
@@ -273,6 +303,22 @@ public class Interfaz {
         JOptionPane.showMessageDialog(frame, equipos.toString(), "Equipos", JOptionPane.INFORMATION_MESSAGE);
     }
 
+    // Método para llenar los HashMap al iniciar la batalla
+    private void prepararBusquedasRapidas() {
+        pokemonsPorNombre.clear();
+        pokemonsPorTipo.clear();
+        // Agregar Pokémon del equipo 1
+        for (Pokemon p : entrenador1.getEquipo()) {
+            pokemonsPorNombre.put(p.getNombre(), p);
+            pokemonsPorTipo.computeIfAbsent(p.getTipo(), k -> new ArrayList<>()).add(p);
+        }
+        // Agregar Pokémon del equipo 2
+        for (Pokemon p : entrenador2.getEquipo()) {
+            pokemonsPorNombre.put(p.getNombre(), p);
+            pokemonsPorTipo.computeIfAbsent(p.getTipo(), k -> new ArrayList<>()).add(p);
+        }
+    }
+
     private void elegirPokemonInicial() {
         // Selección del Pokémon inicial para Entrenador 1
         String[] nombres1 = entrenador1.getEquipo().stream().map(Pokemon::getNombre).toArray(String[]::new);
@@ -311,6 +357,7 @@ public class Interfaz {
         }
 
         turnoJugador1 = true;
+        prepararBusquedasRapidas(); // <-- Agregado aquí
         actualizarPantalla();
         ((CardLayout) frame.getContentPane().getLayout()).show(frame.getContentPane(), "batalla");
     }
@@ -380,14 +427,9 @@ public class Interfaz {
     }
 
     private void ejecutarTurno() {
+        // El atacante y defensor dependen del turno
         Pokemon atacante = turnoJugador1 ? entrenador1.getPokemonActual() : entrenador2.getPokemonActual();
         Pokemon defensor = turnoJugador1 ? entrenador2.getPokemonActual() : entrenador1.getPokemonActual();
-
-        if (atacante == null) {
-            JOptionPane.showMessageDialog(frame, "No hay más Pokémon disponibles para atacar.");
-            finalizarJuego();
-            return;
-        }
 
         int ataqueIndex = ataquesBox.getSelectedIndex();
         if (ataqueIndex < 0) {
@@ -399,10 +441,18 @@ public class Interfaz {
             Ataque ataqueSeleccionado = atacante.getAtaques()[ataqueIndex];
             int danio = atacante.calcularDanio(ataqueSeleccionado, defensor);
             defensor.recibirDanio(danio);
+
+            // Guardar el movimiento en el historial
+            String movimiento = atacante.getNombre() + " usó " + ataqueSeleccionado.getNombre() +
+                    " contra " + defensor.getNombre() + " y causó " + danio + " de daño.";
+            historialMovimientos.push(movimiento);
+
             JOptionPane.showMessageDialog(frame, atacante.getNombre() + " usó " + ataqueSeleccionado.getNombre() + " y causó " + danio + " puntos de daño.");
 
             if (defensor.getPuntosSalud() <= 0) {
-                JOptionPane.showMessageDialog(frame, defensor.getNombre() + " se ha debilitado.");
+                String debil = defensor.getNombre() + " se ha debilitado.";
+                historialMovimientos.push(debil);
+                JOptionPane.showMessageDialog(frame, debil);
                 if (turnoJugador1) {
                     entrenador2.siguientePokemon();
                     if (entrenador2.todosDebilitados()) {
@@ -418,6 +468,7 @@ public class Interfaz {
                 }
             }
 
+            // Cambia el turno para el siguiente jugador
             turnoJugador1 = !turnoJugador1;
             actualizarPantalla();
         } catch (Excepciones.PokemonDebilitadoException e) {
@@ -489,7 +540,7 @@ public class Interfaz {
         }
     }
 
-    // Método para manejar el turno en consola
+    // Método para manejar el turno in consola
     private static void manejarTurnoConsola(Scanner scanner, Entrenador atacante, Entrenador defensor) {
         System.out.println("\nTurno de " + atacante.getNombre());
         Pokemon pokemonAtacante = atacante.getPokemonActual();
@@ -553,7 +604,7 @@ public class Interfaz {
                 nombres,
                 nombres[0]
         );
-        // Si el usuario seleccionó un Pokémon (no canceló)
+        // Si el usuario seleccionó un Pokémon 
         if (seleccion != null) {
             for (Pokemon p : disponibles) {
                 if (p.getNombre().equals(seleccion)) { // Encuentra el Pokémon seleccionado
@@ -564,6 +615,11 @@ public class Interfaz {
                         }
                         // Cambia el Pokémon actual del entrenador
                         actual.setPokemonInicial(p);
+
+                        // Guardar el cambio en el historial //
+                        String cambio = actual.getNombre() + " cambió a " + p.getNombre() + ".";
+                        historialMovimientos.push(cambio);
+
                         // Muestra mensaje de éxito
                         JOptionPane.showMessageDialog(frame, "¡Has cambiado a " + p.getNombre() + "!");
                         // Cambia el turno y actualiza la pantalla solo si el cambio fue exitoso
@@ -577,5 +633,128 @@ public class Interfaz {
                 }
             }
         }
+    }
+
+    // Buscar Pokémon por nombre
+    private Pokemon buscarPorNombre(String nombre) {
+        return pokemonsPorNombre.get(nombre);
+    }
+
+    // Buscar Pokémon por tipo 
+    private ArrayList<Pokemon> buscarPorTipo(Pokemon.Tipo tipo) {
+        return pokemonsPorTipo.getOrDefault(tipo, new ArrayList<>());
+    }
+
+
+    private void mostrarPokemonsFuego() {
+        ArrayList<Pokemon> fuegos = buscarPorTipo(Pokemon.Tipo.FUEGO);
+        StringBuilder sb = new StringBuilder("Pokémon de tipo FUEGO:\n");
+        for (Pokemon p : fuegos) {
+            sb.append(p.getNombre()).append("\n");
+        }
+        JOptionPane.showMessageDialog(frame, sb.toString());
+    }
+
+    // Prepara la lista enlazada de turnos según la velocidad de los Pokémon //
+    private void prepararOrdenTurnos() {
+        ordenTurnos.clear();
+        // Solo agrega los Pokémon actuales de cada entrenador que no estén debilitados
+        Pokemon p1 = entrenador1.getPokemonActual();
+        Pokemon p2 = entrenador2.getPokemonActual();
+        if (p1 != null && p1.getPuntosSalud() > 0) ordenTurnos.add(p1);
+        if (p2 != null && p2.getPuntosSalud() > 0) ordenTurnos.add(p2);
+        // Ordena por velocidad descendente (el más rápido va primero)
+        ordenTurnos.sort((pokeA, pokeB) -> Integer.compare(pokeB.getVelocidad(), pokeA.getVelocidad()));
+    }
+
+    // Método para guardar la partida en un archivo de texto
+    private void guardarPartida() {
+        // Crea la carpeta si no existe
+        File carpeta = new File("src/partidas_txt");
+        if (!carpeta.exists()) carpeta.mkdirs();
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter("src/partidas_txt/partida_guardada.txt"))) {
+            // Guardar nombres de entrenadores
+            writer.println(entrenador1.getNombre());
+            writer.println(entrenador2.getNombre());
+            // Guardar equipos (nombre, hp)
+            for (Pokemon p : entrenador1.getEquipo()) {
+                writer.println("E1;" + p.getNombre() + ";" + p.getPuntosSalud());
+            }
+            writer.println("E1_ACTUAL;" + entrenador1.getPokemonActual().getNombre());
+            for (Pokemon p : entrenador2.getEquipo()) {
+                writer.println("E2;" + p.getNombre() + ";" + p.getPuntosSalud());
+            }
+            writer.println("E2_ACTUAL;" + entrenador2.getPokemonActual().getNombre());
+            // Guardar de quién es el turno
+            writer.println("TURNO;" + (turnoJugador1 ? "1" : "2"));
+            // Guardar historial de movimientos
+            for (String mov : historialMovimientos) {
+                writer.println("HIST;" + mov.replace("\n", "\\n"));
+            }
+            JOptionPane.showMessageDialog(frame, "¡Partida guardada exitosamente!");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(frame, "Error al guardar la partida: " + e.getMessage());
+        }
+    }
+
+    // Método para cargar la partida desde un archivo de texto
+    private void cargarPartida() {
+        File archivo = new File("src/partidas_txt/partida_guardada.txt");
+        if (!archivo.exists()) {
+            JOptionPane.showMessageDialog(frame, "No hay ninguna partida guardada.");
+            return;
+        }
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo))) {
+            String nombre1 = reader.readLine();
+            String nombre2 = reader.readLine();
+            entrenador1 = new Entrenador(nombre1);
+            entrenador2 = new Entrenador(nombre2);
+            ArrayList<Pokemon> equipo1 = new ArrayList<>();
+            ArrayList<Pokemon> equipo2 = new ArrayList<>();
+            String actual1 = null, actual2 = null;
+            String linea;
+            historialMovimientos.clear();
+            while ((linea = reader.readLine()) != null) {
+                if (linea.startsWith("E1;")) {
+                    String[] parts = linea.split(";");
+                    Pokemon p = new Pokemon(buscarEnumPorNombre(parts[1]));
+                    p.recibirDanio(p.getPuntosSalud() - Integer.parseInt(parts[2])); // Ajusta HP
+                    equipo1.add(p);
+                } else if (linea.startsWith("E2;")) {
+                    String[] parts = linea.split(";");
+                    Pokemon p = new Pokemon(buscarEnumPorNombre(parts[1]));
+                    p.recibirDanio(p.getPuntosSalud() - Integer.parseInt(parts[2]));
+                    equipo2.add(p);
+                } else if (linea.startsWith("E1_ACTUAL;")) {
+                    actual1 = linea.split(";")[1];
+                } else if (linea.startsWith("E2_ACTUAL;")) {
+                    actual2 = linea.split(";")[1];
+                } else if (linea.startsWith("TURNO;")) {
+                    turnoJugador1 = linea.split(";")[1].equals("1");
+                } else if (linea.startsWith("HIST;")) {
+                    historialMovimientos.push(linea.substring(5).replace("\\n", "\n"));
+                }
+            }
+            entrenador1.setEquipo(equipo1);
+            entrenador2.setEquipo(equipo2);
+            // Setear el Pokémon actual
+            for (Pokemon p : equipo1) if (p.getNombre().equals(actual1)) entrenador1.setPokemonInicial(p);
+            for (Pokemon p : equipo2) if (p.getNombre().equals(actual2)) entrenador2.setPokemonInicial(p);
+            prepararBusquedasRapidas();
+            actualizarPantalla();
+            ((CardLayout) frame.getContentPane().getLayout()).show(frame.getContentPane(), "batalla");
+            JOptionPane.showMessageDialog(frame, "¡Partida cargada exitosamente!");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(frame, "Error al cargar la partida: " + e.getMessage());
+        }
+    }
+
+    // Método auxiliar para buscar el enum por nombre
+    private PokemonEnum buscarEnumPorNombre(String nombre) {
+        for (PokemonEnum pe : PokemonEnum.values()) {
+            if (pe.getNombre().equals(nombre)) return pe;
+        }
+        return null;
     }
 }
